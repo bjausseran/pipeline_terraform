@@ -1,41 +1,41 @@
-properties([pipelineTriggers([githubPush()])])
-
 pipeline {
-    agent { 
-      docker {
-        image 'hashicorp/terraform:light'
-        args  '--entrypoint='
+  agent {
+    docker {
+      image 'hashicorp/terraform:light'
+      args '--entrypoint='
+    }
+
+  }
+  stages {
+    stage('Init') {
+      steps {
+        sh 'terraform init -backend-config=backend.tfvars'
       }
     }
 
-    options {
-       withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'ynov_6', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']])	
+    stage('Plan') {
+      steps {
+        sh 'terraform plan'
+      }
     }
 
-    environment {
-     AWS_REGION = "eu-west-3"
-}
-    
-    stages {
-	stage('Init') {
-	    steps {
-		sh 'terraform init -backend-config=backend.tfvars'
-	    }
-        }
-	stage('Plan') {
-	    steps {
-		sh 'terraform plan'
-	    }
-        }
-	stage('Apply') {
-	    steps {
-		sh 'terraform apply -auto-approve'
-	    }
-	}
-        stage('Output') {
-            steps {
-                sh 'terraform output'
-            }
-        }
-   }
+    stage('Apply') {
+      steps {
+        sh 'terraform apply -auto-approve'
+      }
+    }
+
+    stage('Output') {
+      steps {
+        sh 'terraform output'
+      }
+    }
+
+  }
+  environment {
+    AWS_REGION = 'eu-west-3'
+  }
+  options {
+    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'ynov_6', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']])
+  }
 }
